@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../domain/entities/episode_entity.dart';
 import '../bloc/feed_bloc.dart';
@@ -17,6 +18,7 @@ class EpisodePlayerWidget extends StatefulWidget {
   final bool isActive;
   final bool isPaywallActive;
   final bool isPaywallUnlocked;
+  final VoidCallback? onVideoCompleted;
 
   const EpisodePlayerWidget({
     super.key,
@@ -24,6 +26,7 @@ class EpisodePlayerWidget extends StatefulWidget {
     required this.isActive,
     required this.isPaywallActive,
     required this.isPaywallUnlocked,
+    this.onVideoCompleted,
   });
 
   @override
@@ -38,6 +41,7 @@ class _EpisodePlayerWidgetState extends State<EpisodePlayerWidget>
   int _likeCount = 0;
   Offset? _doubleTapPosition;
   bool _isPaused = false;
+  bool _hasAutoAdvanced = false;
   late bool _isMuted;
 
   // Global mute state shared across all episodes — mute on one stays muted on all
@@ -132,8 +136,9 @@ class _EpisodePlayerWidgetState extends State<EpisodePlayerWidget>
     try {
       await controller.initialize();
       if (!mounted) return;
-      await controller.setLooping(true);
+      await controller.setLooping(false);
       await controller.setVolume(_isMuted ? 0.0 : 1.0);
+      controller.addListener(_onVideoPositionChanged);
       setState(() => _isInitialized = true);
 
       _fadeController.forward();
@@ -147,11 +152,28 @@ class _EpisodePlayerWidgetState extends State<EpisodePlayerWidget>
 
   @override
   void dispose() {
+    _controller?.removeListener(_onVideoPositionChanged);
     _controller?.dispose();
     _fadeController.dispose();
     _infoSlideController.dispose();
     _pauseIconController.dispose();
     super.dispose();
+  }
+
+  void _onVideoPositionChanged() {
+    final controller = _controller;
+    if (controller == null || _hasAutoAdvanced) return;
+    if (!controller.value.isInitialized) return;
+
+    final position = controller.value.position;
+    final duration = controller.value.duration;
+
+    // Auto-advance when video reaches the end
+    if (duration > Duration.zero &&
+        position >= duration - const Duration(milliseconds: 300)) {
+      _hasAutoAdvanced = true;
+      widget.onVideoCompleted?.call();
+    }
   }
 
   void _onSingleTap() {
@@ -216,7 +238,7 @@ class _EpisodePlayerWidgetState extends State<EpisodePlayerWidget>
         content: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: const Color(0xF0181828),
+            color: AppColors.glassSurface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: Colors.white.withAlpha(12)),
             boxShadow: [

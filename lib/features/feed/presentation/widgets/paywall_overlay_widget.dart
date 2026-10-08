@@ -179,7 +179,7 @@ class _PaywallCard extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       padding: EdgeInsets.fromLTRB(28, 32, 28, bottomPadding + 24),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A28),
+        color: AppColors.cardSurface,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: Colors.white.withAlpha(15),
@@ -253,7 +253,7 @@ class _PaywallCard extends StatelessWidget {
           const Text(
             'Unlock the final chapters and see\nwhat happens next.',
             style: TextStyle(
-              color: Color(0xFF8888AA),
+              color: AppColors.textMuted,
               fontSize: 14,
               height: 1.5,
             ),
@@ -275,7 +275,7 @@ class _PaywallCard extends StatelessWidget {
           const Text(
             'Demo unlock · No payment required',
             style: TextStyle(
-              color: Color(0xFF555566),
+              color: AppColors.textSubtle,
               fontSize: 11,
               fontWeight: FontWeight.w400,
             ),

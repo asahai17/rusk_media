@@ -91,14 +91,6 @@ class EpisodeInfoOverlay extends StatelessWidget {
           bottom: 0,
           child: Container(
             padding: EdgeInsets.fromLTRB(14, 50, 8, effectiveBottom),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Color(0x99000000)],
-                stops: [0.0, 1.0],
-              ),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,

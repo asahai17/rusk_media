@@ -61,13 +61,13 @@ class _ShimmerCtaButtonState extends State<ShimmerCtaButton>
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(28),
               gradient: LinearGradient(
-                colors: [AppColors.primary, const Color(0xFFB5182A)],
+                colors: [AppColors.primary, AppColors.primaryDark],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: Color(0x66E63946),
+                  color: AppColors.shimmerButtonShadow,
                   blurRadius: 20,
                   offset: Offset(0, 6),
                 ),

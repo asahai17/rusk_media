@@ -77,8 +77,11 @@ class _SplashPageState extends State<SplashPage>
 
           final exitOpacity = 1.0 - Curves.easeIn.transform(exitT);
 
-          return Opacity(
-            opacity: (screenFade * exitOpacity).clamp(0.0, 1.0),
+          final combinedOpacity = (screenFade * exitOpacity).clamp(0.0, 1.0);
+          if (combinedOpacity <= 0.01) return const SizedBox.shrink();
+          return AnimatedOpacity(
+            opacity: combinedOpacity,
+            duration: Duration.zero,
             child: Stack(
               children: [
                 // Scan lines
