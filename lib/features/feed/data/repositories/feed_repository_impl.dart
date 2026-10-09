@@ -17,6 +17,7 @@ class FeedRepositoryImpl implements FeedRepository {
           title: AppConstants.episodeTitles[i],
           description: AppConstants.episodeDescriptions[i],
           videoUrl: AppConstants.episodeVideoUrls[i],
+          posterUrl: AppConstants.episodePosterUrls[i],
           posterGradientColorValues: AppColors.episodePosterGradientValues[i],
         ),
       );

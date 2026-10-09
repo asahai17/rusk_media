@@ -6,6 +6,10 @@ class EpisodeEntity extends Equatable {
   final String title;
   final String description;
   final String videoUrl;
+
+  /// Poster frame, when the source has one. Null means "use the gradient".
+  final String? posterUrl;
+
   // Stored as ARGB int values — converted to Color in presentation
   final List<int> posterGradientColorValues;
 
@@ -15,6 +19,7 @@ class EpisodeEntity extends Equatable {
     required this.description,
     required this.videoUrl,
     required this.posterGradientColorValues,
+    this.posterUrl,
   });
 
   @override

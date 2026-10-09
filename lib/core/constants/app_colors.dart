@@ -57,6 +57,7 @@ abstract final class AppColors {
     [Color(0xFF2E0A1A), Color(0xFF6E1A4A)],
     [Color(0xFF1A2E0A), Color(0xFF4A6E1A)],
     [Color(0xFF2E2A0A), Color(0xFF6E601A)],
+    [Color(0xFF0A2A2E), Color(0xFF1A606E)],
   ];
 
   // Int values for domain layer (pure Dart, no flutter imports)
@@ -68,5 +69,6 @@ abstract final class AppColors {
     [0xFF2E0A1A, 0xFF6E1A4A],
     [0xFF1A2E0A, 0xFF4A6E1A],
     [0xFF2E2A0A, 0xFF6E601A],
+    [0xFF0A2A2E, 0xFF1A606E],
   ];
 }

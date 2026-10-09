@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../../core/constants/app_colors.dart';
 
@@ -29,8 +28,6 @@ class _SplashPageState extends State<SplashPage>
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3200),
@@ -87,9 +84,7 @@ class _SplashPageState extends State<SplashPage>
                 // Scan lines
                 Positioned.fill(
                   child: IgnorePointer(
-                    child: CustomPaint(
-                      painter: _ScanLinePainter(),
-                    ),
+                    child: CustomPaint(painter: _ScanLinePainter()),
                   ),
                 ),
 
@@ -142,9 +137,7 @@ class _SplashPageState extends State<SplashPage>
   }
 
   Widget _buildPlayIcon(double iconT, double glowT) {
-    final scale = iconT < 1.0
-        ? Curves.easeOutCubic.transform(iconT)
-        : 1.0;
+    final scale = iconT < 1.0 ? Curves.easeOutCubic.transform(iconT) : 1.0;
     final glowOpacity = (0.5 * math.sin(glowT * math.pi)).clamp(0.0, 1.0);
 
     return Transform.scale(

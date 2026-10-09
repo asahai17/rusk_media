@@ -1,30 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-import '../../../../core/constants/app_constants.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../data/services/ad_preload_manager.dart';
-import '../bloc/feed_bloc.dart';
+import '../../../../core/constants/app_colors.dart';
 import 'shimmer_skeleton.dart';
+
+/// Dark native template matching the app theme. Lives with the ad page so
+/// the data layer never imports Material or AppColors.
+final NativeTemplateStyle nativeAdTemplateStyle = NativeTemplateStyle(
+  templateType: TemplateType.medium,
+  mainBackgroundColor: const Color(0xFF141420),
+  cornerRadius: 16,
+  callToActionTextStyle: NativeTemplateTextStyle(
+    textColor: Colors.white,
+    backgroundColor: AppColors.primary,
+    style: NativeTemplateFontStyle.bold,
+    size: 15,
+  ),
+  primaryTextStyle: NativeTemplateTextStyle(
+    textColor: Colors.white,
+    style: NativeTemplateFontStyle.bold,
+    size: 15,
+  ),
+  secondaryTextStyle: NativeTemplateTextStyle(
+    textColor: const Color(0xAAFFFFFF),
+    size: 13,
+  ),
+  tertiaryTextStyle: NativeTemplateTextStyle(
+    textColor: const Color(0x88FFFFFF),
+    size: 12,
+  ),
+);
 
 // Full-screen native ad page in the PageView.
 // Uses NativeAd with NativeTemplateStyle for rich styled ad content.
 // Never places AdWidget under Opacity or Transform (Android native view rule).
+//
+// Failure is not handled here: a failed slot is removed from the feed by the
+// bloc, so this widget only ever sees "still loading" (null) or a loaded ad.
 class AdSlotWidget extends StatefulWidget {
-  final String adId;
-  final String adUnitId;
-  final AdLoadStatus adLoadStatus;
-  final PageController pageController;
-  final int pageIndex;
+  final NativeAd? ad;
 
-  const AdSlotWidget({
-    super.key,
-    required this.adId,
-    required this.adUnitId,
-    required this.adLoadStatus,
-    required this.pageController,
-    required this.pageIndex,
-  });
+  const AdSlotWidget({super.key, required this.ad});
 
   @override
   State<AdSlotWidget> createState() => _AdSlotWidgetState();
@@ -32,77 +48,28 @@ class AdSlotWidget extends StatefulWidget {
 
 class _AdSlotWidgetState extends State<AdSlotWidget>
     with AutomaticKeepAliveClientMixin {
-  bool _hasAutoSkipped = false;
-
+  // A NativeAd is bound to one AdWidget; keeping the page alive avoids
+  // re-mounting the platform view every time it scrolls into view.
   @override
   bool get wantKeepAlive => true;
-
-  @override
-  void didUpdateWidget(AdSlotWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.adLoadStatus == AdLoadStatus.failed && !_hasAutoSkipped) {
-      _hasAutoSkipped = true;
-      _autoSkip();
-    }
-  }
-
-  void _autoSkip() {
-    Future.delayed(AppConstants.adAutoSkipDelay, () {
-      if (!mounted) return;
-      final nextPage = widget.pageIndex + 1;
-      if (widget.pageController.hasClients) {
-        widget.pageController.animateToPage(
-          nextPage,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    return switch (widget.adLoadStatus) {
-      AdLoadStatus.loading => const ShimmerSkeleton(),
-      AdLoadStatus.failed => _buildFailedPage(),
-      AdLoadStatus.loaded => _buildLoadedPage(),
-    };
+    final ad = widget.ad;
+    if (ad == null) return const ShimmerSkeleton();
+    return _LoadedAdPage(ad: ad);
   }
+}
 
-  Widget _buildFailedPage() {
-    if (!_hasAutoSkipped) {
-      _hasAutoSkipped = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _autoSkip());
-    }
+class _LoadedAdPage extends StatelessWidget {
+  final NativeAd ad;
 
-    return Container(
-      color: Colors.black,
-      child: const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(
-              color: Color(0x44E63946),
-              strokeWidth: 2,
-            ),
-            SizedBox(height: 12),
-            Text(
-              'Continuing...',
-              style: TextStyle(color: Colors.white38, fontSize: 13),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  const _LoadedAdPage({required this.ad});
 
-  Widget _buildLoadedPage() {
-    final ad = sl<AdPreloadManager>().getLoadedAd(widget.adId);
-    if (ad == null) return Container(color: Colors.black);
-
-    // Ad sits underneath, loading cover fades off.
+  @override
+  Widget build(BuildContext context) {
     // AdWidget is NEVER placed under Opacity or Transform (Android rule).
     return ColoredBox(
       color: Colors.black,
@@ -128,8 +95,10 @@ class _AdSlotWidgetState extends State<AdSlotWidget>
               right: 0,
               child: Center(
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withAlpha(15),
                     borderRadius: BorderRadius.circular(16),

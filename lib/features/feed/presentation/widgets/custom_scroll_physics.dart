@@ -1,33 +1,32 @@
 import 'package:flutter/widgets.dart';
 
-// Smooth page-snap physics with paywall lock.
-// Extends PageScrollPhysics (Flutter's built-in page snapping) for correct
-// one-page-per-swipe behavior. No custom spring — uses Flutter's default
-// which is already tuned for smooth, snappy page transitions.
+/// Paywall lock physics. PageView wraps this in its own PageScrollPhysics,
+/// so page snapping is Flutter's default; this layer only clamps forward
+/// scroll at the locked page while leaving backward scroll untouched.
+///
+/// The locked page is read through [lockedPage] on every scroll update rather
+/// than captured at construction: Scrollable keeps its ScrollPosition (and
+/// the physics inside it) as long as the physics *type* is unchanged, so a
+/// new instance with a different value would never take effect.
 class ReelScrollPhysics extends ScrollPhysics {
-  final bool isLocked;
-  final int lockedPageIndex;
+  /// Page index the user may not scroll past, or null when nothing is locked.
+  final int? Function() lockedPage;
 
-  const ReelScrollPhysics({
-    required this.isLocked,
-    required this.lockedPageIndex,
-    super.parent,
-  });
+  const ReelScrollPhysics({required this.lockedPage, super.parent});
 
   @override
   ReelScrollPhysics applyTo(ScrollPhysics? ancestor) {
     return ReelScrollPhysics(
-      isLocked: isLocked,
-      lockedPageIndex: lockedPageIndex,
+      lockedPage: lockedPage,
       parent: buildParent(ancestor),
     );
   }
 
   @override
   double applyBoundaryConditions(ScrollMetrics position, double value) {
-    if (isLocked) {
-      final lockedExtent =
-          lockedPageIndex.toDouble() * position.viewportDimension;
+    final locked = lockedPage();
+    if (locked != null) {
+      final lockedExtent = locked * position.viewportDimension;
       if (value > lockedExtent) {
         return value - lockedExtent;
       }

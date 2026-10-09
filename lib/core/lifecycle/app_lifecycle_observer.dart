@@ -1,8 +1,7 @@
 import 'package:flutter/widgets.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 
-// Pauses video on background, resumes on foreground.
-// Manages wakelock so screen stays on during playback.
+// Reports background/foreground transitions to the owner. It decides nothing
+// about playback or the wakelock; the player pool owns both.
 class AppLifecycleObserver with WidgetsBindingObserver {
   AppLifecycleObserver({required this.onPause, required this.onResume});
 
@@ -12,19 +11,17 @@ class AppLifecycleObserver with WidgetsBindingObserver {
 
   void init() {
     WidgetsBinding.instance.addObserver(this);
-    WakelockPlus.enable();
   }
 
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    WakelockPlus.disable();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.inactive:
-        // Notification shade — keep playing (matches TikTok behavior)
+        // Notification shade / app switcher peek — keep playing.
         break;
       case AppLifecycleState.hidden:
       case AppLifecycleState.paused:

@@ -7,6 +7,7 @@ class EpisodeModel extends EpisodeEntity {
     required super.description,
     required super.videoUrl,
     required super.posterGradientColorValues,
+    super.posterUrl,
   });
 
   factory EpisodeModel.fromIndex(
@@ -15,6 +16,7 @@ class EpisodeModel extends EpisodeEntity {
     required String description,
     required String videoUrl,
     required List<int> posterGradientColorValues,
+    String? posterUrl,
   }) {
     return EpisodeModel(
       id: index + 1,
@@ -22,6 +24,7 @@ class EpisodeModel extends EpisodeEntity {
       description: description,
       videoUrl: videoUrl,
       posterGradientColorValues: posterGradientColorValues,
+      posterUrl: posterUrl,
     );
   }
 }

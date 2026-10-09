@@ -1,7 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:video_player/video_player.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/duration_formatter.dart';
+
+/// The seek bar bound to a controller, sitting above the system nav bar.
+/// Only this subtree rebuilds on position ticks.
+class EpisodeSeekBar extends StatelessWidget {
+  final VideoPlayerController controller;
+  final double bottomPadding;
+
+  const EpisodeSeekBar({
+    super.key,
+    required this.controller,
+    required this.bottomPadding,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: bottomPadding + 8,
+      child: ValueListenableBuilder<VideoPlayerValue>(
+        valueListenable: controller,
+        builder: (_, value, _) => ProgressBarWidget(
+          position: value.position,
+          duration: value.duration,
+          onSeek: controller.seekTo,
+        ),
+      ),
+    );
+  }
+}
 
 class ProgressBarWidget extends StatefulWidget {
   final Duration position;

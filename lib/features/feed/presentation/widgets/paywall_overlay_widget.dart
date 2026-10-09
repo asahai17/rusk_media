@@ -5,15 +5,21 @@ import '../../../../core/constants/app_constants.dart';
 import '../../domain/entities/episode_entity.dart';
 import 'shimmer_cta_button.dart';
 
-/// Full-screen paywall overlay for Episode 7.
-/// Clean, minimal card design with blurred background.
+/// Full-screen paywall overlay for the locked episode.
+/// Blurs the episode's poster and slides a card up with an elastic bounce.
+///
+/// The card animates in each time the page becomes [isActive] and slides
+/// away when the user leaves, so the bounce is seen on every arrival rather
+/// than once, off-screen, while the page is being pre-built.
 class PaywallOverlayWidget extends StatefulWidget {
   final EpisodeEntity episode;
+  final bool isActive;
   final VoidCallback onUnlock;
 
   const PaywallOverlayWidget({
     super.key,
     required this.episode,
+    required this.isActive,
     required this.onUnlock,
   });
 
@@ -34,6 +40,7 @@ class _PaywallOverlayWidgetState extends State<PaywallOverlayWidget>
     _slideController = AnimationController(
       vsync: this,
       duration: AppConstants.paywallSlideUpDuration,
+      reverseDuration: const Duration(milliseconds: 250),
     );
 
     _slideAnimation = Tween<Offset>(
@@ -42,16 +49,29 @@ class _PaywallOverlayWidgetState extends State<PaywallOverlayWidget>
     ).animate(CurvedAnimation(
       parent: _slideController,
       curve: Curves.elasticOut,
+      reverseCurve: Curves.easeIn,
     ));
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _slideController,
         curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
+        reverseCurve: Curves.easeIn,
       ),
     );
 
-    _slideController.forward();
+    if (widget.isActive) _slideController.forward();
+  }
+
+  @override
+  void didUpdateWidget(PaywallOverlayWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive == oldWidget.isActive) return;
+    if (widget.isActive) {
+      _slideController.forward(from: 0);
+    } else {
+      _slideController.reverse();
+    }
   }
 
   @override
@@ -68,9 +88,22 @@ class _PaywallOverlayWidgetState extends State<PaywallOverlayWidget>
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
+    final posterUrl = widget.episode.posterUrl;
 
     return Stack(
       children: [
+        // The poster the blur applies to. Without one, the episode gradient
+        // beneath this overlay shows through instead.
+        if (posterUrl != null)
+          Positioned.fill(
+            child: Image.network(
+              posterUrl,
+              fit: BoxFit.cover,
+              cacheWidth: 720,
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+            ),
+          ),
+
         // Blurred background
         Positioned.fill(
           child: BackdropFilter(

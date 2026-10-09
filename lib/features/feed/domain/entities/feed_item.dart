@@ -14,12 +14,13 @@ final class EpisodeFeedItem extends FeedItem {
   List<Object?> get props => [episode];
 }
 
+/// An ad slot. Which ad unit serves it is the preloader's decision, keyed on
+/// this id, so the domain carries nothing SDK-specific.
 final class AdFeedItem extends FeedItem {
   final String id;
-  final String adUnitId;
 
-  const AdFeedItem({required this.id, required this.adUnitId});
+  const AdFeedItem({required this.id});
 
   @override
-  List<Object?> get props => [id, adUnitId];
+  List<Object?> get props => [id];
 }

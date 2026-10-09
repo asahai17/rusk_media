@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
 
@@ -66,12 +67,24 @@ class _HeartBurst extends StatefulWidget {
 }
 
 class _HeartBurstState extends State<_HeartBurst>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
+  /// Timeline for rise, fade, rotation and the satellites.
   late AnimationController _controller;
+
+  /// Scale pop: an unbounded controller driven by a real spring, so the
+  /// overshoot and settle come from physics rather than a hand-drawn curve.
+  late AnimationController _scaleController;
   late List<_SatelliteData> _satellites;
 
   final _rng = math.Random();
   late final double _rotDir;
+
+  // Under-damped (ratio ≈ 0.45): overshoots to ~1.2 then settles at 1.
+  static const SpringDescription _popSpring = SpringDescription(
+    mass: 1,
+    stiffness: 180,
+    damping: 12,
+  );
 
   @override
   void initState() {
@@ -82,6 +95,8 @@ class _HeartBurstState extends State<_HeartBurst>
       vsync: this,
       duration: const Duration(milliseconds: 1100),
     );
+    _scaleController = AnimationController.unbounded(vsync: this)
+      ..animateWith(SpringSimulation(_popSpring, 0.0, 1.0, 18.0));
 
     // Generate 3 satellite mini-hearts
     _satellites = List.generate(3, (_) {
@@ -102,23 +117,17 @@ class _HeartBurstState extends State<_HeartBurst>
   @override
   void dispose() {
     _controller.dispose();
+    _scaleController.dispose();
     super.dispose();
   }
 
-  // --- Safe manual animation curves (no TweenSequence) ---
+  // Opacity is clamped before it reaches the Opacity widget, which is the
+  // only place an overshooting value would throw.
 
+  /// Spring value, eased down by a quarter while the heart rises and fades.
   double _mainScale(double t) {
-    if (t < 0.25) {
-      return 1.35 * Curves.easeOut.transform(t / 0.25);
-    } else if (t < 0.35) {
-      return 1.35 - 0.45 * ((t - 0.25) / 0.1);
-    } else if (t < 0.45) {
-      return 0.9 + 0.15 * ((t - 0.35) / 0.1);
-    } else if (t < 0.55) {
-      return 1.05 - 0.05 * ((t - 0.45) / 0.1);
-    } else {
-      return 1.0 - 0.2 * ((t - 0.55) / 0.45);
-    }
+    final settle = t < 0.5 ? 1.0 : 1.0 - 0.25 * ((t - 0.5) / 0.5);
+    return _scaleController.value * settle;
   }
 
   double _mainOpacity(double t) {
@@ -146,7 +155,7 @@ class _HeartBurstState extends State<_HeartBurst>
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _controller,
+      animation: Listenable.merge([_controller, _scaleController]),
       builder: (context, _) {
         final t = _controller.value.clamp(0.0, 1.0);
         final rise = _mainRise(t);
@@ -215,23 +224,18 @@ class _HeartBurstState extends State<_HeartBurst>
   }
 
   Widget _buildSatellite(_SatelliteData sat, double t, double mainRise) {
-    final effectiveT =
-        ((t - sat.delay) / (1.0 - sat.delay)).clamp(0.0, 1.0);
+    final effectiveT = ((t - sat.delay) / (1.0 - sat.delay)).clamp(0.0, 1.0);
     if (effectiveT <= 0) return const SizedBox.shrink();
 
     final curve = Curves.easeOutCubic.transform(effectiveT);
-    final fadeCurve =
-        effectiveT < 0.5 ? 1.0 : 1.0 - ((effectiveT - 0.5) / 0.5);
+    final fadeCurve = effectiveT < 0.5 ? 1.0 : 1.0 - ((effectiveT - 0.5) / 0.5);
     final scale = effectiveT < 0.2
         ? effectiveT / 0.2
         : 1.0 - ((effectiveT - 0.2) / 0.8) * 0.4;
 
     return Positioned(
       left: widget.position.dx - sat.size / 2 + sat.dx * curve,
-      top: widget.position.dy -
-          sat.size / 2 +
-          sat.dy * curve +
-          mainRise * 0.5,
+      top: widget.position.dy - sat.size / 2 + sat.dy * curve + mainRise * 0.5,
       child: Opacity(
         opacity: fadeCurve.clamp(0.0, 1.0),
         child: Transform.scale(
@@ -242,9 +246,7 @@ class _HeartBurstState extends State<_HeartBurst>
               Icons.favorite_rounded,
               color: AppColors.heartRed,
               size: sat.size,
-              shadows: const [
-                Shadow(color: Color(0x44FF3B5C), blurRadius: 12),
-              ],
+              shadows: const [Shadow(color: Color(0x44FF3B5C), blurRadius: 12)],
             ),
           ),
         ),
